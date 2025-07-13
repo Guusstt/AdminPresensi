@@ -62,7 +62,7 @@ function AdminDashboard() {
     if (session) {
       fetchData();
     }
-  }, [session]);
+  }, [session, selectedMonth, selectedYear]); // Tambahkan dependensi agar rekap bulanan ikut ter-update
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -101,7 +101,6 @@ function AdminDashboard() {
       setLoginError("Terjadi kesalahan, pengguna tidak ditemukan.");
       await supabase.auth.signOut();
     }
-
     setLoggingIn(false);
   };
 
@@ -185,6 +184,7 @@ function AdminDashboard() {
     const fileName = `presensi-guru-${selectedDate}.xlsx`;
     XLSX.writeFile(wb, fileName);
   };
+
   const exportMonthlyRecapToExcel = () => {
     const recap = getMonthlyRecap();
     if (recap.length === 0) {
@@ -224,17 +224,14 @@ function AdminDashboard() {
     });
 
   const getStats = () => {
-    const today = formatToLocalDateString(new Date());
+    const todayStr = formatToLocalDateString(new Date());
     const todayP = presences.filter(
-      (p) => formatToLocalDateString(p.created_at) === today
+      (p) => formatToLocalDateString(p.created_at) === todayStr
     );
     const uniq = new Set(todayP.map((p) => p.user_id));
     return {
       totalToday: todayP.length,
       uniqueUsers: uniq.size,
-      morningCount: todayP.filter((p) => p.presence_type === "morning").length,
-      afternoonCount: todayP.filter((p) => p.presence_type === "afternoon")
-        .length,
       totalUsers: users.length,
     };
   };
@@ -254,14 +251,14 @@ function AdminDashboard() {
         }
       }
     });
-    return Array.from(recapMap.values());
+    return Array.from(recapMap.values()).sort((a, b) => b.count - a.count);
   };
 
   if (!session) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
-          <div className="text-center space-y-6">
+        <div className="bg-white rounded-2xl shadow-2xl p-6 md:p-8 w-full max-w-md">
+          <div className="text-center space-y-4">
             <Users className="w-16 h-16 text-white bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl p-4 mx-auto" />
             <h1 className="text-2xl font-bold text-gray-900">Admin Login</h1>
             <p className="text-gray-600">Masuk ke sistem presensi guru</p>
@@ -289,9 +286,9 @@ function AdminDashboard() {
             <button
               type="submit"
               disabled={loggingIn}
-              className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
             >
-              {loggingIn ? "Masuk..." : "Masuk"}
+              {loggingIn ? "Memproses..." : "Masuk"}
             </button>
           </form>
         </div>
@@ -301,122 +298,95 @@ function AdminDashboard() {
 
   const stats = getStats();
   const filteredPresences = getFilteredPresences();
+  const monthlyRecap = getMonthlyRecap();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-      <div className="bg-white shadow-lg border-b">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-4">
-            <Users className="w-12 h-12 text-white bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl p-3" />
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Admin Dashboard
-              </h1>
-              <p className="text-gray-600">Sistem Presensi Guru</p>
-            </div>
-          </div>
-          <button
-            onClick={signOut}
-            className="flex items-center space-x-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-          >
-            <LogOut className="w-4 h-4" />
-            <span>Keluar</span>
-          </button>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto p-6 space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-blue-500">
-            <div className="flex justify-between">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-md sticky top-0 z-10">
+        <div className="px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row justify-between items-center py-4 gap-4">
+            <div className="flex items-center space-x-4">
+              <Users className="w-12 h-12 text-white bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl p-3" />
               <div>
-                <p className="text-sm font-medium text-gray-600">
-                  Presensi Hari Ini
-                </p>
-                <p className="text-3xl font-bold text-blue-600">
-                  {stats.totalToday}
-                </p>
+                <h1 className="text-xl md:text-2xl font-bold text-gray-900">
+                  Admin Dashboard
+                </h1>
+                <p className="text-sm text-gray-600">Sistem Presensi Guru</p>
               </div>
-              <Clock className="w-12 h-12 text-blue-600 bg-blue-100 rounded-xl p-3" />
             </div>
+            <button
+              onClick={signOut}
+              className="flex items-center space-x-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors w-full sm:w-auto justify-center"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>Keluar</span>
+            </button>
           </div>
         </div>
+      </header>
 
-        <div className="bg-white rounded-2xl shadow-lg p-6">
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-            <div className="flex flex-wrap items-center gap-4 w-full lg:w-auto">
-              <div className="flex-grow lg:flex-grow-0">
-                <div className="relative">
-                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="text"
-                    placeholder="Cari nama atau email..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-gray-800 focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
+      <main className="p-4 sm:p-6 lg:p-8 space-y-6">
+        {/* Stat Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <StatCard
+            title="Presensi Hari Ini"
+            value={stats.totalToday}
+            icon={<Clock />}
+            color="blue"
+          />
+          <StatCard
+            title="Guru Hadir Hari Ini"
+            value={stats.uniqueUsers}
+            icon={<Users />}
+            color="green"
+          />
+          <StatCard
+            title="Total Guru Terdaftar"
+            value={stats.totalUsers}
+            icon={<Users />}
+            color="purple"
+          />
+        </div>
+
+        {/* Filters and Actions */}
+        <div className="bg-white rounded-2xl shadow-lg p-4 md:p-6">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            <div className="flex flex-col md:flex-row flex-wrap items-center gap-4 w-full">
+              {/* Search */}
+              <div className="relative w-full md:w-auto md:flex-grow">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input
+                  type="text"
+                  placeholder="Cari nama atau email..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-gray-800 focus:ring-2 focus:ring-blue-500"
+                />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">
+
+              {/* Date Filter */}
+              <div className="w-full md:w-auto">
+                <label className="text-sm font-medium text-gray-600 sr-only">
                   Tanggal
                 </label>
                 <input
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-800 focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-800 focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">
-                  Bulan
-                </label>
-                <select
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-800 focus:ring-2 focus:ring-blue-500"
-                >
-                  {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                    <option key={m} value={m}>
-                      {m}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">
-                  Tahun
-                </label>
-                <input
-                  type="number"
-                  value={selectedYear}
-                  onChange={(e) => setSelectedYear(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-800 focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">
-                  Jenis Sesi
-                </label>
-                <select
-                  value={selectedType}
-                  onChange={(e) => setSelectedType(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-800 focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="all">Semua Jenis</option>
-                  <option value="morning">Pagi</option>
-                  <option value="afternoon">Siang</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">
+
+              {/* Teacher Filter */}
+              <div className="w-full md:w-auto">
+                <label className="text-sm font-medium text-gray-600 sr-only">
                   Guru
                 </label>
                 <select
                   value={selectedUser}
                   onChange={(e) => setSelectedUser(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-800 focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-800 focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="all">Semua Guru</option>
                   {users.map((u) => (
@@ -428,11 +398,11 @@ function AdminDashboard() {
               </div>
             </div>
 
-            <div className="flex flex-shrink-0 gap-3 self-end lg:self-center">
+            <div className="flex flex-col sm:flex-row flex-shrink-0 gap-3 w-full lg:w-auto">
               <button
                 onClick={fetchData}
                 disabled={loading}
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 disabled:opacity-50"
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 disabled:opacity-50 transition-colors"
               >
                 <RefreshCw
                   className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
@@ -441,18 +411,20 @@ function AdminDashboard() {
               </button>
               <button
                 onClick={exportToExcel}
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600"
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition-colors"
               >
                 <Download className="w-4 h-4" />
-                <span>Export</span>
+                <span>Export Harian</span>
               </button>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-2xl shadow overflow-hidden">
-          <div className="p-6 border-b">
-            <h2 className="text-xl font-bold text-gray-900">
-              Data Presensi ({filteredPresences.length} data)
+
+        {/* Daily Presence Table */}
+        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+          <div className="p-4 md:p-6 border-b">
+            <h2 className="text-lg md:text-xl font-bold text-gray-900">
+              Data Presensi Harian ({filteredPresences.length} data)
             </h2>
           </div>
           <div className="overflow-x-auto">
@@ -465,24 +437,24 @@ function AdminDashboard() {
               <div className="py-12 text-center">
                 <XCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-500">
-                  Tidak ada data presensi yang ditemukan
+                  Tidak ada data presensi yang ditemukan.
                 </p>
               </div>
             ) : (
-              <table className="w-full">
+              <table className="w-full text-sm">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                       Guru
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Tanggal & Waktu
+                      Waktu
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                       Jenis
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Lokasi
+                      Lokasi & Jarak
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                       Status
@@ -494,13 +466,13 @@ function AdminDashboard() {
                     <tr key={p.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="font-medium text-gray-900">
-                          {p.profiles?.name || "Nama Tidak Ditemukan"}
+                          {p.profiles?.name || "N/A"}
                         </div>
-                        <div className="text-sm text-gray-500">
-                          {p.profiles?.email || "Email Tidak Ditemukan"}
+                        <div className="text-gray-500">
+                          {p.profiles?.email || "N/A"}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                      <td className="px-6 py-4 whitespace-nowrap text-gray-700">
                         {p.created_at ? formatDateTime(p.created_at) : "-"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -514,19 +486,20 @@ function AdminDashboard() {
                           {p.presence_label}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        Lat: {p.latitude?.toFixed(6)}
-                        <br />
-                        Lng: {p.longitude?.toFixed(6)}
+                      <td className="px-6 py-4 whitespace-nowrap text-gray-500">
+                        <div>Lat: {p.latitude?.toFixed(5) || "N/A"}</div>
+                        <div>Lng: {p.longitude?.toFixed(5) || "N/A"}</div>
                         {p.distance != null && (
-                          <div className="text-xs text-gray-400">
-                            Jarak: {p.distance}m
+                          <div className="text-xs text-blue-500 font-semibold">
+                            Jarak: {p.distance} meter
                           </div>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-green-700 flex items-center">
-                        <CheckCircle className="w-4 h-4 mr-2 text-green-500" />
-                        Valid
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="flex items-center text-green-700">
+                          <CheckCircle className="w-4 h-4 mr-1 text-green-500" />
+                          Valid
+                        </span>
                       </td>
                     </tr>
                   ))}
@@ -535,21 +508,48 @@ function AdminDashboard() {
             )}
           </div>
         </div>
-        <div className="bg-white rounded-2xl shadow overflow-hidden mt-6">
-          <div className="p-6 border-b">
-            <h2 className="text-xl font-bold text-gray-900">
-              Rekap Presensi Bulanan ({selectedMonth}/{selectedYear})
-            </h2>
+
+        {/* Monthly Recap Table */}
+        <div className="bg-white rounded-2xl shadow-lg overflow-hidden mt-6">
+          <div className="p-4 md:p-6 border-b flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <h2 className="text-lg md:text-xl font-bold text-gray-900">
+                Rekap Presensi Bulanan
+              </h2>
+              <p className="text-sm text-gray-500">
+                Menampilkan data untuk bulan dan tahun yang dipilih
+              </p>
+            </div>
+            <div className="flex gap-2 w-full md:w-auto">
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                className="w-full md:w-auto px-4 py-2 border border-gray-300 rounded-lg text-gray-800 focus:ring-2 focus:ring-blue-500"
+              >
+                {Array.from({ length: 12 }, (_, i) => (
+                  <option key={i + 1} value={i + 1}>
+                    {new Date(0, i).toLocaleString("id-ID", { month: "long" })}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="number"
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                className="w-full md:w-auto px-4 py-2 border border-gray-300 rounded-lg text-gray-800 focus:ring-2 focus:ring-blue-500"
+                placeholder="Tahun"
+              />
+            </div>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full text-sm">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Guru
+                    Peringkat
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Email
+                    Guru
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                     Total Presensi
@@ -557,45 +557,92 @@ function AdminDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {getMonthlyRecap().length === 0 ? (
+                {monthlyRecap.length === 0 ? (
                   <tr>
                     <td
                       colSpan="3"
-                      className="px-6 py-4 text-center text-gray-500"
+                      className="px-6 py-12 text-center text-gray-500"
                     >
-                      Tidak ada data rekap bulan ini
+                      Tidak ada data rekap untuk bulan ini.
                     </td>
                   </tr>
                 ) : (
-                  getMonthlyRecap().map((r) => (
+                  monthlyRecap.map((r, index) => (
                     <tr key={r.user?.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {r.user?.name || "Nama Tidak Ditemukan"}
+                      <td className="px-6 py-4 whitespace-nowrap font-bold text-gray-700">
+                        {index + 1}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {r.user?.email || "Email Tidak Ditemukan"}
+                        <div className="font-medium text-gray-900">
+                          {r.user?.name || "N/A"}
+                        </div>
+                        <div className="text-gray-500">
+                          {r.user?.email || "N/A"}
+                        </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">{r.count}</td>
+                      <td className="px-6 py-4 whitespace-nowrap font-bold text-lg text-blue-600">
+                        {r.count}
+                      </td>
                     </tr>
                   ))
                 )}
               </tbody>
             </table>
           </div>
-
-          <div className="p-6 border-t flex justify-end">
+          <div className="p-4 md:p-6 border-t flex justify-end">
             <button
               onClick={exportMonthlyRecapToExcel}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600"
+              disabled={monthlyRecap.length === 0}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:bg-gray-400 transition-colors"
             >
               <Download className="w-4 h-4" />
               <span>Export Rekap Bulanan</span>
             </button>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
+
+// Komponen Card Statistik untuk kerapian kode
+const StatCard = ({ title, value, icon, color }) => {
+  const colors = {
+    blue: {
+      border: "border-blue-500",
+      text: "text-blue-600",
+      bg: "bg-blue-100",
+    },
+    green: {
+      border: "border-green-500",
+      text: "text-green-600",
+      bg: "bg-green-100",
+    },
+    purple: {
+      border: "border-purple-500",
+      text: "text-purple-600",
+      bg: "bg-purple-100",
+    },
+  };
+  const c = colors[color] || colors.blue;
+
+  return (
+    <div
+      className={`bg-white rounded-2xl shadow-lg p-5 border-l-4 ${c.border}`}
+    >
+      <div className="flex justify-between items-center">
+        <div>
+          <p className="text-sm font-medium text-gray-600">{title}</p>
+          <p className={`text-3xl font-bold ${c.text}`}>{value}</p>
+        </div>
+        <div
+          className={`w-12 h-12 flex items-center justify-center rounded-xl p-3 ${c.bg} ${c.text}`}
+        >
+          {React.cloneElement(icon, { className: "w-6 h-6" })}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default AdminDashboard;
