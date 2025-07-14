@@ -159,6 +159,26 @@ function AdminDashboard() {
       hour12: false,
     });
 
+  const isPresenceValid = (presence) => {
+    const presenceDate = formatToLocalDateString(presence.created_at);
+    const userId = presence.user_id;
+
+    const sameDayPresences = presences.filter(
+      (p) =>
+        p.user_id === userId &&
+        formatToLocalDateString(p.created_at) === presenceDate
+    );
+
+    const hasMorning = sameDayPresences.some(
+      (p) => p.presence_type === "morning"
+    );
+    const hasAfternoon = sameDayPresences.some(
+      (p) => p.presence_type === "afternoon"
+    );
+
+    return hasMorning && hasAfternoon;
+  };
+
   const formatDate = (d) =>
     new Date(d).toLocaleDateString("id-ID", {
       year: "numeric",
@@ -496,10 +516,17 @@ function AdminDashboard() {
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="flex items-center text-green-700">
-                          <CheckCircle className="w-4 h-4 mr-1 text-green-500" />
-                          Valid
-                        </span>
+                        {isPresenceValid(p) ? (
+                          <span className="flex items-center text-green-700">
+                            <CheckCircle className="w-4 h-4 mr-1 text-green-500" />
+                            Valid
+                          </span>
+                        ) : (
+                          <span className="flex items-center text-red-700">
+                            <XCircle className="w-4 h-4 mr-1 text-red-500" />
+                            Tidak Valid
+                          </span>
+                        )}
                       </td>
                     </tr>
                   ))}
