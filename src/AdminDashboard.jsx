@@ -13,7 +13,6 @@ import {
 import * as XLSX from "xlsx";
 import { supabase } from "./supabaseClient";
 
-// Helper format tanggal YYYY-MM-DD
 const formatToLocalDateString = (date) => {
   if (!date) return "";
   const d = new Date(date);
@@ -62,7 +61,7 @@ function AdminDashboard() {
     if (session) {
       fetchData();
     }
-  }, [session, selectedMonth, selectedYear]); // Tambahkan dependensi agar rekap bulanan ikut ter-update
+  }, [session, selectedMonth, selectedYear]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -184,6 +183,7 @@ function AdminDashboard() {
       year: "numeric",
       month: "long",
       day: "numeric",
+      hour: "2-digit",
     });
 
   const exportToExcel = () => {
@@ -321,18 +321,19 @@ function AdminDashboard() {
   const monthlyRecap = getMonthlyRecap();
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+    <div className="min-h-screen bg-gray-50 pb-10">
       <header className="bg-white shadow-md sticky top-0 z-10">
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row justify-between items-center py-4 gap-4">
-            <div className="flex items-center space-x-4">
-              <Users className="w-12 h-12 text-white bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl p-3" />
+            <div className="flex items-center space-x-4 w-full sm:w-auto justify-center sm:justify-start">
+              <Users className="w-10 h-10 md:w-12 md:h-12 text-white bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl p-2 md:p-3" />
               <div>
-                <h1 className="text-xl md:text-2xl font-bold text-gray-900">
+                <h1 className="text-lg md:text-2xl font-bold text-gray-900">
                   Admin Dashboard
                 </h1>
-                <p className="text-sm text-gray-600">Sistem Presensi Guru</p>
+                <p className="text-xs md:text-sm text-gray-600">
+                  Sistem Presensi Guru
+                </p>
               </div>
             </div>
             <button
@@ -347,8 +348,7 @@ function AdminDashboard() {
       </header>
 
       <main className="p-4 sm:p-6 lg:p-8 space-y-6">
-        {/* Stat Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           <StatCard
             title="Presensi Hari Ini"
             value={stats.totalToday}
@@ -369,60 +369,52 @@ function AdminDashboard() {
           />
         </div>
 
-        {/* Filters and Actions */}
         <div className="bg-white rounded-2xl shadow-lg p-4 md:p-6">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-            <div className="flex flex-col md:flex-row flex-wrap items-center gap-4 w-full">
-              {/* Search */}
+            <div className="flex flex-col md:flex-row flex-wrap items-center gap-3 w-full">
               <div className="relative w-full md:w-auto md:flex-grow">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
                   type="text"
-                  placeholder="Cari nama atau email..."
+                  placeholder="Cari nama / email..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-gray-800 focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-gray-800 focus:ring-2 focus:ring-blue-500 text-sm"
                 />
               </div>
 
-              {/* Date Filter */}
-              <div className="w-full md:w-auto">
-                <label className="text-sm font-medium text-gray-600 sr-only">
-                  Tanggal
-                </label>
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-800 focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full md:w-auto">
+                <div>
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-800 focus:ring-2 focus:ring-blue-500 text-sm"
+                  />
+                </div>
 
-              {/* Teacher Filter */}
-              <div className="w-full md:w-auto">
-                <label className="text-sm font-medium text-gray-600 sr-only">
-                  Guru
-                </label>
-                <select
-                  value={selectedUser}
-                  onChange={(e) => setSelectedUser(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-800 focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="all">Semua Guru</option>
-                  {users.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.name || u.email}
-                    </option>
-                  ))}
-                </select>
+                <div>
+                  <select
+                    value={selectedUser}
+                    onChange={(e) => setSelectedUser(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-800 focus:ring-2 focus:ring-blue-500 text-sm"
+                  >
+                    <option value="all">Semua Guru</option>
+                    {users.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.name || u.email}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row flex-shrink-0 gap-3 w-full lg:w-auto">
+            <div className="grid grid-cols-2 sm:flex sm:flex-row gap-3 w-full lg:w-auto">
               <button
                 onClick={fetchData}
                 disabled={loading}
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 disabled:opacity-50 transition-colors"
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 disabled:opacity-50 transition-colors text-sm"
               >
                 <RefreshCw
                   className={`w-4 h-4 ${loading ? "animate-spin" : ""}`}
@@ -431,20 +423,19 @@ function AdminDashboard() {
               </button>
               <button
                 onClick={exportToExcel}
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition-colors"
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition-colors text-sm"
               >
                 <Download className="w-4 h-4" />
-                <span>Export Harian</span>
+                <span>Export</span>
               </button>
             </div>
           </div>
         </div>
 
-        {/* Daily Presence Table */}
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           <div className="p-4 md:p-6 border-b">
             <h2 className="text-lg md:text-xl font-bold text-gray-900">
-              Data Presensi Harian ({filteredPresences.length} data)
+              Data Presensi ({filteredPresences.length})
             </h2>
           </div>
           <div className="overflow-x-auto">
@@ -464,19 +455,19 @@ function AdminDashboard() {
               <table className="w-full text-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Guru
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Waktu
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Jenis
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Lokasi & Jarak
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
                     </th>
                   </tr>
@@ -484,18 +475,35 @@ function AdminDashboard() {
                 <tbody className="divide-y divide-gray-200">
                   {filteredPresences.map((p) => (
                     <tr key={p.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="font-medium text-gray-900">
+                      <td className="px-4 md:px-6 py-4 whitespace-nowrap">
+                        <div className="font-medium text-gray-900 truncate max-w-[120px] md:max-w-none">
                           {p.profiles?.name || "N/A"}
                         </div>
-                        <div className="text-gray-500">
+                        <div className="text-xs text-gray-500 truncate max-w-[120px] md:max-w-none">
                           {p.profiles?.email || "N/A"}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-gray-700">
-                        {p.created_at ? formatDateTime(p.created_at) : "-"}
+                      <td className="px-4 md:px-6 py-4 whitespace-nowrap text-gray-700">
+                        {p.created_at ? (
+                          <div className="flex flex-col">
+                            <span>
+                              {new Date(p.created_at).toLocaleTimeString(
+                                "id-ID",
+                                { hour: "2-digit", minute: "2-digit" }
+                              )}
+                            </span>
+                            <span className="text-xs text-gray-400 md:hidden">
+                              {new Date(p.created_at).toLocaleDateString(
+                                "id-ID",
+                                { day: "numeric", month: "short" }
+                              )}
+                            </span>
+                          </div>
+                        ) : (
+                          "-"
+                        )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-4 md:px-6 py-4 whitespace-nowrap">
                         <span
                           className={`px-2 py-1 rounded-full text-xs font-semibold ${
                             p.presence_type === "morning"
@@ -506,25 +514,25 @@ function AdminDashboard() {
                           {p.presence_label}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-gray-500">
+                      <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap text-gray-500">
                         <div>Lat: {p.latitude?.toFixed(5) || "N/A"}</div>
                         <div>Lng: {p.longitude?.toFixed(5) || "N/A"}</div>
                         {p.distance != null && (
                           <div className="text-xs text-blue-500 font-semibold">
-                            Jarak: {p.distance} meter
+                            Jarak: {p.distance}m
                           </div>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-4 md:px-6 py-4 whitespace-nowrap">
                         {isPresenceValid(p) ? (
                           <span className="flex items-center text-green-700">
                             <CheckCircle className="w-4 h-4 mr-1 text-green-500" />
-                            Valid
+                            <span className="hidden sm:inline">Valid</span>
                           </span>
                         ) : (
                           <span className="flex items-center text-red-700">
                             <XCircle className="w-4 h-4 mr-1 text-red-500" />
-                            Tidak Valid
+                            <span className="hidden sm:inline">Invalid</span>
                           </span>
                         )}
                       </td>
@@ -536,22 +544,21 @@ function AdminDashboard() {
           </div>
         </div>
 
-        {/* Monthly Recap Table */}
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden mt-6">
           <div className="p-4 md:p-6 border-b flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
               <h2 className="text-lg md:text-xl font-bold text-gray-900">
-                Rekap Presensi Bulanan
+                Rekap Bulanan
               </h2>
-              <p className="text-sm text-gray-500">
-                Menampilkan data untuk bulan dan tahun yang dipilih
+              <p className="text-xs md:text-sm text-gray-500">
+                Data periode terpilih
               </p>
             </div>
             <div className="flex gap-2 w-full md:w-auto">
               <select
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(Number(e.target.value))}
-                className="w-full md:w-auto px-4 py-2 border border-gray-300 rounded-lg text-gray-800 focus:ring-2 focus:ring-blue-500"
+                className="w-full md:w-auto px-3 py-2 border border-gray-300 rounded-lg text-gray-800 focus:ring-2 focus:ring-blue-500 text-sm"
               >
                 {Array.from({ length: 12 }, (_, i) => (
                   <option key={i + 1} value={i + 1}>
@@ -563,7 +570,7 @@ function AdminDashboard() {
                 type="number"
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(Number(e.target.value))}
-                className="w-full md:w-auto px-4 py-2 border border-gray-300 rounded-lg text-gray-800 focus:ring-2 focus:ring-blue-500"
+                className="w-24 px-3 py-2 border border-gray-300 rounded-lg text-gray-800 focus:ring-2 focus:ring-blue-500 text-sm"
                 placeholder="Tahun"
               />
             </div>
@@ -572,14 +579,14 @@ function AdminDashboard() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Peringkat
+                  <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Rank
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                  <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                     Guru
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Total Presensi
+                  <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Total
                   </th>
                 </tr>
               </thead>
@@ -590,24 +597,24 @@ function AdminDashboard() {
                       colSpan="3"
                       className="px-6 py-12 text-center text-gray-500"
                     >
-                      Tidak ada data rekap untuk bulan ini.
+                      Tidak ada data.
                     </td>
                   </tr>
                 ) : (
                   monthlyRecap.map((r, index) => (
                     <tr key={r.user?.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap font-bold text-gray-700">
+                      <td className="px-4 md:px-6 py-4 whitespace-nowrap font-bold text-gray-700">
                         {index + 1}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="font-medium text-gray-900">
+                      <td className="px-4 md:px-6 py-4 whitespace-nowrap">
+                        <div className="font-medium text-gray-900 truncate max-w-[150px] md:max-w-none">
                           {r.user?.name || "N/A"}
                         </div>
-                        <div className="text-gray-500">
+                        <div className="text-xs text-gray-500 truncate max-w-[150px] md:max-w-none">
                           {r.user?.email || "N/A"}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap font-bold text-lg text-blue-600">
+                      <td className="px-4 md:px-6 py-4 whitespace-nowrap font-bold text-lg text-blue-600">
                         {r.count}
                       </td>
                     </tr>
@@ -620,10 +627,10 @@ function AdminDashboard() {
             <button
               onClick={exportMonthlyRecapToExcel}
               disabled={monthlyRecap.length === 0}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:bg-gray-400 transition-colors"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:bg-gray-400 transition-colors text-sm"
             >
               <Download className="w-4 h-4" />
-              <span>Export Rekap Bulanan</span>
+              <span>Export Rekap</span>
             </button>
           </div>
         </div>
@@ -632,7 +639,6 @@ function AdminDashboard() {
   );
 }
 
-// Komponen Card Statistik untuk kerapian kode
 const StatCard = ({ title, value, icon, color }) => {
   const colors = {
     blue: {
@@ -655,17 +661,19 @@ const StatCard = ({ title, value, icon, color }) => {
 
   return (
     <div
-      className={`bg-white rounded-2xl shadow-lg p-5 border-l-4 ${c.border}`}
+      className={`bg-white rounded-2xl shadow-lg p-4 md:p-5 border-l-4 ${c.border}`}
     >
       <div className="flex justify-between items-center">
         <div>
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className={`text-3xl font-bold ${c.text}`}>{value}</p>
+          <p className="text-xs md:text-sm font-medium text-gray-600">
+            {title}
+          </p>
+          <p className={`text-2xl md:text-3xl font-bold ${c.text}`}>{value}</p>
         </div>
         <div
-          className={`w-12 h-12 flex items-center justify-center rounded-xl p-3 ${c.bg} ${c.text}`}
+          className={`w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-xl p-2 md:p-3 ${c.bg} ${c.text}`}
         >
-          {React.cloneElement(icon, { className: "w-6 h-6" })}
+          {React.cloneElement(icon, { className: "w-5 h-5 md:w-6 md:h-6" })}
         </div>
       </div>
     </div>
